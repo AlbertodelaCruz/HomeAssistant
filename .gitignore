@@ -1,0 +1,5 @@
+bin/
+*.prg
+*.prg.*
+internal-mir/
+mir/
