@@ -16,18 +16,21 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     //! On a menu event, make a web request
     //! @return true if handled, false otherwise
     public function onMenu() as Boolean {
-        makeRequest("");
         return true;
     }
 
     //! On a select event, make a web request
     //! @return true if handled, false otherwise
     public function onSelect() as Boolean {
-        makeRequest("");
+        makeRequest();
         return true;
     }
     //! Make the web request
-    private function makeRequest(bearer) as Void {
+    private function makeRequest() as Void {
+        var app = Application.getApp();
+        var project_id = app.getProperty("project_id");
+        var bearer = app.getProperty("bearer_token");
+
         _notify.invoke("Executing\nRequest");
 
         var options = {
@@ -40,7 +43,7 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
         };
 
         Communications.makeWebRequest(
-            "https://smartdevicemanagement.googleapis.com/v1/enterprises/PROJECT_ID/devices",
+            "https://smartdevicemanagement.googleapis.com/v1/enterprises/" + project_id + "/devices",
             {},
             options,
             method(:onReceive)
@@ -48,6 +51,11 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     }
 
     private function _reauthenticate() as Void {
+        var app = Application.getApp();
+        var client_id = app.getProperty("client_id");
+        var client_secret = app.getProperty("client_secret");
+        var refresh_token = app.getProperty("refresh_token");
+
         _notify.invoke("Executing\nReAuth");
 
         var options = {
@@ -56,7 +64,7 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
         };
 
         Communications.makeWebRequest(
-            "https://www.googleapis.com/oauth2/v4/token?client_id=CLIENT_ID&client_secret=CLIENT_TOKEN&refresh_token=REFRESH_TOKEN&grant_type=refresh_token",
+            "https://www.googleapis.com/oauth2/v4/token?client_id=" + client_id + "&client_secret=" + client_secret + "&refresh_token=" + refresh_token + "&grant_type=refresh_token",
             {},
             options,
             method(:onReceiveReauth)
@@ -86,7 +94,9 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     public function onReceiveReauth(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
         if (responseCode == 200) {
             var access_token = data["access_token"];
-            makeRequest(access_token);
+            var app = Application.getApp();
+            app.setProperty("bearer_token", access_token);
+            makeRequest();
         } else {
             _notify.invoke("Failed to load\nError: " + responseCode.toString());
         }

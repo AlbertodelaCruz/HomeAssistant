@@ -3,3 +3,4 @@ bin/
 *.prg.*
 internal-mir/
 mir/
+.env
