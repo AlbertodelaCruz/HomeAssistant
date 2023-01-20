@@ -1,6 +1,7 @@
 import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.WatchUi;
+using Toybox.Application.Properties;
 
 //! Creates a web request on menu / select events
 class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
@@ -27,9 +28,8 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     }
     //! Make the web request
     private function makeRequest() as Void {
-        var app = Application.getApp();
-        var project_id = app.getProperty("project_id");
-        var bearer = app.getProperty("bearer_token");
+        var project_id = Properties.getValue("project_id");
+        var bearer = Properties.getValue("bearer_token");
 
         _notify.invoke("Executing\nRequest");
 
@@ -51,10 +51,9 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     }
 
     private function _reauthenticate() as Void {
-        var app = Application.getApp();
-        var client_id = app.getProperty("client_id");
-        var client_secret = app.getProperty("client_secret");
-        var refresh_token = app.getProperty("refresh_token");
+        var client_id = Properties.getValue("client_id");
+        var client_secret = Properties.getValue("client_secret");
+        var refresh_token = Properties.getValue("refresh_token");
 
         _notify.invoke("Executing\nReAuth");
 
@@ -94,8 +93,7 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     public function onReceiveReauth(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
         if (responseCode == 200) {
             var access_token = data["access_token"];
-            var app = Application.getApp();
-            app.setProperty("bearer_token", access_token);
+            Properties.setValue("bearer_token", access_token);
             makeRequest();
         } else {
             _notify.invoke("Failed to load\nError: " + responseCode.toString());
