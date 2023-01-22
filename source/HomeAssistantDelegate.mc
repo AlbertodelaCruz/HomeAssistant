@@ -75,9 +75,9 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
             _reauthenticate();
         } else
         if (responseCode == 200) {
-            var temperature_set = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatTemperatureSetpoint"]["heatCelsius"];
-            var temperature = data["devices"][0]["traits"]["sdm.devices.traits.Temperature"]["ambientTemperatureCelsius"];
-            var status = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatHvac"]["status"];
+            var temperature_set = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatTemperatureSetpoint"]["heatCelsius"] as Float;
+            var temperature = data["devices"][0]["traits"]["sdm.devices.traits.Temperature"]["ambientTemperatureCelsius"] as Float;
+            var status = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatHvac"]["status"] as String;
             var response_data = {
                 "Temp" => temperature,
                 "TempTo" => temperature_set,
@@ -92,7 +92,7 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
 
     public function onReceiveReauth(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
         if (responseCode == 200) {
-            var access_token = data["access_token"];
+            var access_token = data["access_token"] as String;
             Properties.setValue("bearer_token", access_token);
             makeRequest();
         } else {
