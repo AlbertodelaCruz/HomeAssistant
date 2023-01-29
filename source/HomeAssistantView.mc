@@ -40,28 +40,20 @@ class HomeAssistantView extends WatchUi.View {
             _message = args;
         } else if (args instanceof Dictionary) {
             // Print the arguments duplicated and returned by jsonplaceholder.typicode.com
-            message_from_json(args);
+            _messageFromJson(args);
         }
         WatchUi.requestUpdate();
     }
 
-    private function message_from_json(args as Dictionary) {
+    private function _messageFromJson(args as Dictionary) {
         var keys = args.keys();
         _message = "";
         for (var i = 0; i < keys.size(); i++) {
-            if (args[keys[i]] instanceof Float) {
-                _message += format_float(args, keys, i);
-            } else {
-                _message += format_string(args, keys, i);;
-            }
+            _message += _formatString(args, keys, i);;
         }
     }
 
-    private function format_float(args as Dictionary, keys as Array, i as Number) {
-        return Lang.format("$1$: $2$\n", [keys[i], args[keys[i]].format("%0.1f")]);
-    }
-
-    private function format_string(args as Dictionary, keys as Array, i as Number) {
+    private function _formatString(args as Dictionary, keys as Array, i as Number) {
         return Lang.format("$1$: $2$\n", [keys[i], args[keys[i]]]);
     }
 }

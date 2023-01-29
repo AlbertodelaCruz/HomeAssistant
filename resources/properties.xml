@@ -4,7 +4,7 @@
         <property id="client_id" type="string"></property>
         <property id="client_secret" type="string"></property>
         <property id="refresh_token" type="string"></property>
-        <property id="bearer_token" type="string"></property>
+        <property id="device_id" type="string"></property>
     </properties>
 
     <settings>

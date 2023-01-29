@@ -2,6 +2,7 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
+
 //! This app demonstrates how to make web requests through GCM.
 class HomeAssistantApp extends Application.AppBase {
 

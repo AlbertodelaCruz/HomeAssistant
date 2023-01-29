@@ -2,34 +2,74 @@ import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.WatchUi;
 using Toybox.Application.Properties;
+using Toybox.Application.Storage;
 
-//! Creates a web request on menu / select events
+
 class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
     private var _notify as Method(args as Dictionary or String or Null) as Void;
 
-    //! Set up the callback to the view
-    //! @param handler Callback method for when data is received
     public function initialize(handler as Method(args as Dictionary or String or Null) as Void) {
         WatchUi.BehaviorDelegate.initialize();
         _notify = handler;
     }
 
-    //! On a menu event, make a web request
-    //! @return true if handled, false otherwise
     public function onMenu() as Boolean {
         return true;
     }
 
-    //! On a select event, make a web request
-    //! @return true if handled, false otherwise
     public function onSelect() as Boolean {
-        makeRequest();
+        _getNestDevices();
         return true;
     }
-    //! Make the web request
-    private function makeRequest() as Void {
+
+    public function onKey(keyEvent as KeyEvent) as Boolean {
+        var view = new $.NestTempPickerView();
+        var delegate = new $.NestTempPickerDelegate(view);
+        return WatchUi.pushView(view, delegate, WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    public function onReceive(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
+        if (responseCode == 401) {
+            _reauthenticate();
+        } else
+        if (responseCode == 200) {
+            var device_id_path = data["devices"][0]["name"] as String;
+            Storage.setValue("device_id", device_id_path.substring(57, 151));
+            var temperature_set = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatTemperatureSetpoint"]["heatCelsius"] as Float;
+            Storage.setValue("temperature_set", _formatTemperature(temperature_set.toString()));
+            var temperature = data["devices"][0]["traits"]["sdm.devices.traits.Temperature"]["ambientTemperatureCelsius"] as Float;
+            var status = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatHvac"]["status"] as String;
+            var response_data = {
+                "Temp" => _formatTemperature(temperature.toString()),
+                "TempTo" => _formatTemperature(temperature_set.toString()),
+                "Status" => status
+            };
+            _notify.invoke(response_data);
+        } else {
+            _notify.invoke("Failed to load\nError: " + responseCode.toString());
+        }
+    }
+
+    public function onReceiveReauth(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
+        if (responseCode == 200) {
+            var access_token = data["access_token"] as String;
+            Storage.setValue("bearer_token", access_token);
+            _getNestDevices();
+        } else {
+            _notify.invoke("Failed to load\nError: " + responseCode.toString());
+        }
+    }
+
+    private function _formatTemperature(temperature as String) as String {
+        if (temperature.length() > 4) {
+            return temperature.substring(0, 4);
+        }
+        return temperature;
+    }
+
+    private function _getNestDevices() as Void {
         var project_id = Properties.getValue("project_id");
-        var bearer = Properties.getValue("bearer_token");
+        var bearer = Storage.getValue("bearer_token");
 
         _notify.invoke("Executing\nRequest");
 
@@ -68,35 +108,5 @@ class HomeAssistantDelegate extends WatchUi.BehaviorDelegate {
             options,
             method(:onReceiveReauth)
         );
-    }
-
-    public function onReceive(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
-        if (responseCode == 401) {
-            _reauthenticate();
-        } else
-        if (responseCode == 200) {
-            var temperature_set = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatTemperatureSetpoint"]["heatCelsius"] as Float;
-            var temperature = data["devices"][0]["traits"]["sdm.devices.traits.Temperature"]["ambientTemperatureCelsius"] as Float;
-            var status = data["devices"][0]["traits"]["sdm.devices.traits.ThermostatHvac"]["status"] as String;
-            var response_data = {
-                "Temp" => temperature,
-                "TempTo" => temperature_set,
-                "Status" => status
-            };
-            //System.println(response_data);
-            _notify.invoke(response_data);
-        } else {
-            _notify.invoke("Failed to load\nError: " + responseCode.toString());
-        }
-    }
-
-    public function onReceiveReauth(responseCode as Number, data as Dictionary<String, Object?> or String or Null) as Void {
-        if (responseCode == 200) {
-            var access_token = data["access_token"] as String;
-            Properties.setValue("bearer_token", access_token);
-            makeRequest();
-        } else {
-            _notify.invoke("Failed to load\nError: " + responseCode.toString());
-        }
     }
 }
